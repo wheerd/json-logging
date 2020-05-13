@@ -7,5 +7,5 @@ class JsonLoggerFactory : ILoggerFactory {
     LogLevel.valueOf(System.getenv("LOG_LEVEL") ?: LogLevel.Debug.name)
   }
 
-  override fun getLogger(name: String) = JsonLogger(minLevel = minLogLevel.value, name = name)
+  override fun getLogger(name: String) = JsonLogger(minLevel = minLogLevel.value, loggerName = name)
 }

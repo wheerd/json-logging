@@ -3,23 +3,52 @@ package org.slf4j.impl
 import org.slf4j.Logger
 import org.slf4j.Marker
 import java.io.PrintStream
+import kotlinx.serialization.json.*
+import java.io.PrintWriter
+import java.io.StringWriter
+import java.time.Instant
 
 
 class JsonLogger(
-  private val name: String,
+  private val loggerName: String,
   private val minLevel: LogLevel,
   private val out: PrintStream = System.out
-
 ) : Logger {
+
+  private val json = Json(JsonConfiguration.Stable)
+
   private fun log(level: LogLevel, message: String, throwable: Throwable) {
-    out.println("${level}: $message $throwable")
+    val stackTrace = StringWriter().let {
+      throwable.printStackTrace(PrintWriter(it))
+      toString()
+    }
+
+    val jsonMessage = json {
+      "message" to message
+      "level" to level.name.toLowerCase()
+      "exceptionMessage" to throwable.message
+      "stackTrace" to stackTrace
+      "timestamp" to Instant.now().toString()
+      "source" to loggerName
+    }
+
+    val jsonData = json.stringify(JsonObject.serializer(), jsonMessage)
+    out.println(jsonData)
   }
 
   private fun log(level: LogLevel, message: String) {
-    out.println("${level}: $message")
+    val jsonMessage = json {
+      "message" to message
+      "level" to level.name.toLowerCase()
+      "timestamp" to Instant.now().toString()
+      "source" to loggerName
+    }
+
+    val jsonData = json.stringify(JsonObject.serializer(), jsonMessage)
+    out.println(jsonData)
   }
 
-  override fun getName() = name
+  override fun getName() = loggerName
 
   override fun isWarnEnabled() = minLevel >= LogLevel.Warn
   override fun isWarnEnabled(marker: Marker?) = isWarnEnabled()
